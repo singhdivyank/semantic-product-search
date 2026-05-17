@@ -1,0 +1,10 @@
+.DS_Store
+
+.venv
+
+load_data.py
+*.pdf
+
+.env
+env/
+*.env

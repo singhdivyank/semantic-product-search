@@ -1,1 +1,65 @@
+database:
+  host: "${DB_HOST}"
+  port: ${DB_PORT}
+  name: "${DB_NAME}"
+  user: "${DB_USER}"
+  password: "${DB_PSWD}"
+  pool:
+    size: 10
+    max_overflow: 5
+    pool_recycle: 3600
+    pre_ping: true
 
+embedding:
+  model_name: "sentence-transformers/all-MiniLM-L6-v2"
+  dim: 384
+  batch_size: 64
+  chunk_size: 500
+  normalize: true
+
+generation:
+  model_name: "mistralai/Mistral-7B-Instruct-v0.3"
+  max_new_tokens: 512
+  temperature: 0
+  do_sample: false
+
+sentiment:
+  model_name: "distilbert-base-uncased-finetuned-sst-2-english"
+  batch_size: 256
+  max_length: 512
+  truncation: true
+
+vector_search:
+  hnsw_m: 16
+  hnsw_ef_construction: 64
+  hnsw_ef_search: 100
+  ivfflat_lists: 50
+  oversample_factor: 8
+  default_top_k: 5
+
+ingestion:
+  data_dir: "${INGESTION_DATA_DIR}"
+  reviews_filename: "Gift_cards.jsonl"
+  clean_reviews_filename: "Gift_cards_clean.jsonl"
+  embeddings_filename: "Gift_cards_embeddings.jsonl"
+  meta_filename: "meta_Gift_cards.jsonl"
+  clean_meta_filename: "meta_Gift_cards_clean.jsonl"
+
+mlflow:
+  tracking_uri: "${MLFLOW_URI}"
+  experiment_name: "gift-cards-embeddings"
+  artifact_location: "${MLFLOW_DIR}"
+
+airflow:
+  home: "${AIRFLOW_DIR}"
+  dag_schedule: "@weekly"
+  retries: 2
+  retry_delay_min: 5
+
+api:
+  host: "${API_HOST}"
+  port: "${API_PORT}"
+  reload: true # set false in prod
+  prefix: "/api/v1"
+  title: "Semantic Product Search API"
+  version: "1.0.0"

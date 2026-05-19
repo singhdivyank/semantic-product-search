@@ -5,3 +5,4 @@ sentence_transformers==5.5.0
 SQLAlchemy==2.0.49
 mlflow==3.12.0
 apache-airflow==3.2.1
+pgvector==0.4.2

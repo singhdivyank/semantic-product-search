@@ -20,9 +20,15 @@ semantic-product-search/
 ├── db/                 # SQL Schema and Migration Control
 │ ├── alembic/          # Alembic migration environment
 │ │   └── versions/     # Database migration tracks
+│ ├── tables/           # SQLAlchemy classes with pgvector/halfvec types
+│ | ├── base.py
+│ | ├── product_embeddings.py
+| │ ├── products.py
+│ │ └── reviews.py
 │ ├── alembic.ini       # Alembic configuration
-│ ├── models.py         # SQLAlchemy classes with pgvector/halfvec types
-│ └── seed_data.py      # Populates local instance for testing
+│ ├── consts.py
+│ ├── seed_data.py      # Populates local instance for testing
+│ └── seed_helpers.py
 │
 ├── dags/               # Apache Airflow Workflows
 │ ├── src/              # Helper modules for ETL tasks

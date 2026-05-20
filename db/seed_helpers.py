@@ -23,7 +23,7 @@ def get_embedding_rows() -> list[dict]:
             "embedding_half": _random_unit_vector(384),
             "model_name": "sentence-transformers/all-MiniLM-L6-v2",
             "mlflow_run_id": "seed-run-local",
-    ***REMOVED***
+        }
         for p in PRODUCTS
     ]
 
@@ -37,7 +37,7 @@ def get_product_rows() -> list[dict]:
                 "features": json.dumps(product.get("features", [])),
                 "description": json.dumps(product.get("description", [])),
                 "categories": json.dumps(product.get("categories", [])),
-        ***REMOVED***
+            }
         )
 
     return rows
@@ -67,7 +67,7 @@ def get_reviews_rows() -> list[dict]:
                     "reviewed_at": datetime.now(tz=timezone.utc),
                     "sentiment_label": tmpl["sentiment_label"],
                     "sentiment_score": tmpl["sentiment_score"],
-            ***REMOVED***
+                }
             )
 
     return rows

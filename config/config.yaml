@@ -18,6 +18,7 @@ embedding:
   normalize: true
 
 generation:
+  api_token: "${HF_API_TOKEN}"
   model_name: "mistralai/Mistral-7B-Instruct-v0.3"
   max_new_tokens: 512
   temperature: 0

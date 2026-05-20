@@ -1,0 +1,327 @@
+# Notification channels (configure in Alertmanager):
+#   - Slack: #alerts-semantic-search
+#   - Email: data-engineering@yourcompany.com
+#
+# Severity levels used:
+#   critical — immediate page; service degraded for users
+#   warning  — investigate within 1 business day
+#   info     — logged, no page
+
+groups:
+  - name: search_latency
+    interval: 30s
+    rules:
+      # Full semantic search p95 > 2 s for 3 minutes
+      - alert: SearchLatencyHighCritical
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(search_execution_seconds_bucket{has_vector="True"}[5m])) by (le)
+          ) > 2.0
+        for: 3m
+        labels:
+          severity: critical
+          team: data-engineering
+          channel: slack
+        annotations:
+          summary: "Semantic search p95 latency critical (> 2 s)"
+          description: >
+            The p95 full-pipeline search latency has been above 2 seconds for
+            3 minutes.  Current value: {{ $value | humanizeDuration }}.
+            Check HNSW ef_search, DB connection pool saturation, and GPU memory.
+          runbook: "https://wiki.internal/runbooks/search-latency"
+          slack_channel: "#alerts-semantic-search"
+
+      # Full semantic search p95 > 1 s (warning — earlier signal)
+      - alert: SearchLatencyHighWarning
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(search_execution_seconds_bucket{has_vector="True"}[5m])) by (le)
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          team: data-engineering
+          channel: slack
+        annotations:
+          summary: "Semantic search p95 latency elevated (> 1 s)"
+          description: >
+            The p95 full-pipeline search latency has been above 1 second for
+            5 minutes.  Current: {{ $value | humanizeDuration }}.
+          slack_channel: "#alerts-semantic-search"
+
+      # HNSW Stage-1 binary scan p95 > 500 ms
+      - alert: HNSWScanLatencyHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(hnsw_stage1_scan_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: data-engineering
+        annotations:
+          summary: "HNSW Stage-1 Hamming scan p95 > 500 ms"
+          description: >
+            Binary-quantised HNSW index scan taking {{ $value | humanizeDuration }}
+            at p95.  Possible causes: index not in shared_buffers RAM, ef_search too
+            high, or table bloat.
+          slack_channel: "#alerts-semantic-search"
+
+      # DB query p95 > 1 s (all query types)
+      - alert: DBQueryLatencyHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(db_query_seconds_bucket[5m])) by (le, query_type)
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          team: data-engineering
+        annotations:
+          summary: "PostgreSQL query p95 latency > 1 s ({{ $labels.query_type }})"
+          description: >
+            DB query of type '{{ $labels.query_type }}' is at
+            {{ $value | humanizeDuration }} p95.  Check pg_stat_activity for
+            lock contention or index misses.
+          slack_channel: "#alerts-semantic-search"
+
+  - name: vector_index_health
+    interval: 60s
+    rules:
+      # Index recall drop below 85 % (binary quantisation losing precision)
+      - alert: HNSWRecallRateLow
+        expr: hnsw_recall_rate < 0.85
+        for: 10m
+        labels:
+          severity: warning
+          team: data-engineering
+        annotations:
+          summary: "HNSW recall rate below 85% (k={{ $labels.k }})"
+          description: >
+            Binary-quantised HNSW recall@{{ $labels.k }} has dropped to
+            {{ $value | humanizePercentage }}.  Results may be degraded.
+            Consider raising ef_search or reindexing with a larger m value.
+          slack_channel: "#alerts-semantic-search"
+
+      # Recall below 75 % — critical, reindex required
+      - alert: HNSWRecallRateCritical
+        expr: hnsw_recall_rate < 0.75
+        for: 5m
+        labels:
+          severity: critical
+          team: data-engineering
+        annotations:
+          summary: "HNSW recall rate critical (< 75%) — reindex required"
+          description: >
+            HNSW recall@{{ $labels.k }} = {{ $value | humanizePercentage }}.
+            Product search quality is significantly degraded.
+            Trigger the reindex Airflow DAG immediately.
+          slack_channel: "#alerts-semantic-search"
+          runbook: "https://wiki.internal/runbooks/hnsw-reindex"
+
+      # Shared buffer cache hit ratio drops below 90 %
+      - alert: PGBufferHitRatioLow
+        expr: pg_buffer_hit_ratio < 0.90
+        for: 10m
+        labels:
+          severity: warning
+          team: data-engineering
+        annotations:
+          summary: "PostgreSQL shared_buffers hit ratio below 90%"
+          description: >
+            Buffer hit ratio is {{ $value | humanizePercentage }}.
+            The HNSW index may no longer fit in RAM — index scans will be
+            slow due to disk reads.  Increase shared_buffers or reduce
+            ef_construction / m to shrink index size.
+          slack_channel: "#alerts-semantic-search"
+
+  - name: llm_latency
+    interval: 30s
+    rules:
+      # TTFT p95 > 5 s
+      - alert: LLMTTFTHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(llm_time_to_first_token_seconds_bucket[5m])) by (le, model_name)
+          ) > 5.0
+        for: 5m
+        labels:
+          severity: warning
+          team: ml-engineering
+        annotations:
+          summary: "Mistral-7B TTFT p95 > 5 s ({{ $labels.model_name }})"
+          description: >
+            Time to First Token is {{ $value | humanizeDuration }} at p95.
+            Check GPU utilisation, KV-cache size, and batch queue depth.
+          slack_channel: "#alerts-llm"
+
+      # Total generation p95 > 30 s
+      - alert: LLMGenerationLatencyHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(llm_generation_seconds_bucket[5m])) by (le, model_name)
+          ) > 30.0
+        for: 5m
+        labels:
+          severity: critical
+          team: ml-engineering
+        annotations:
+          summary: "Mistral-7B generation p95 > 30 s — user experience degraded"
+          description: >
+            LLM generation latency ({{ $labels.model_name }}) is
+            {{ $value | humanizeDuration }} at p95.  Reviews may time out.
+            Disable summarisation via feature flag if needed.
+          slack_channel: "#alerts-llm"
+
+      # LLM error rate > 5 % over 5 min
+      - alert: LLMErrorRateHigh
+        expr: |
+          rate(llm_errors_total[5m])
+          /
+          (rate(llm_generation_seconds_count[5m]) + 1e-9)
+          > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: ml-engineering
+        annotations:
+          summary: "LLM error rate > 5% ({{ $labels.model_name }} / {{ $labels.error_type }})"
+          description: >
+            {{ $value | humanizePercentage }} of generation calls are failing
+            with error '{{ $labels.error_type }}'.
+            Check GPU OOM, model loading, and HF API token validity.
+          slack_channel: "#alerts-llm"
+
+  - name: token_cost
+    interval: 60s
+    rules:
+      # Input token rate > 10k/min (unexpected spike → possible prompt injection or loop)
+      - alert: TokenConsumptionSpike
+        expr: rate(llm_tokens_total{token_type="input"}[5m]) * 60 > 10000
+        for: 3m
+        labels:
+          severity: warning
+          team: ml-engineering
+        annotations:
+          summary: "LLM input token rate spike > 10k tokens/min"
+          description: >
+            Input token consumption is {{ $value | humanize }} tokens/min —
+            above expected baseline.  Check for prompt injection, runaway
+            retry loops, or abuse of the summarise endpoint.
+          slack_channel: "#alerts-llm"
+
+  - name: rag_quality
+    interval: 300s # evaluated less frequently (Ragas scores are batch)
+    rules:
+      # Faithfulness p10 drops below 0.60 (worst-case summaries getting bad)
+      - alert: LLMFaithfulnessLow
+        expr: |
+          histogram_quantile(
+            0.10,
+            sum(rate(llm_faithfulness_score_bucket[30m])) by (le, model_name)
+          ) < 0.60
+        for: 15m
+        labels:
+          severity: warning
+          team: ml-engineering
+        annotations:
+          summary: "Ragas faithfulness p10 below 0.60 — hallucination risk"
+          description: >
+            The p10 faithfulness score for {{ $labels.model_name }} is
+            {{ $value }}.  The worst 10% of summaries are likely hallucinating.
+            Review prompt template and context chunk strategy.
+          slack_channel: "#alerts-llm"
+
+      # Answer relevance p10 drops below 0.60
+      - alert: LLMAnswerRelevanceLow
+        expr: |
+          histogram_quantile(
+            0.10,
+            sum(rate(llm_answer_relevance_score_bucket[30m])) by (le, model_name)
+          ) < 0.60
+        for: 15m
+        labels:
+          severity: warning
+          team: ml-engineering
+        annotations:
+          summary: "Ragas answer relevance p10 below 0.60"
+          description: >
+            The p10 answer relevance score for {{ $labels.model_name }} is
+            {{ $value }}.  Summaries may not address the user's query.
+          slack_channel: "#alerts-llm"
+
+  - name: embedding_drift
+    interval: 300s
+    rules:
+      # JS divergence > 0.10 (moderate drift — monitor)
+      - alert: EmbeddingDriftWarning
+        expr: embedding_drift_score > 0.10
+        for: 0m # fire immediately when condition is met (batch job sets it once)
+        labels:
+          severity: warning
+          team: data-engineering
+        annotations:
+          summary: "Embedding distribution drift detected ({{ $labels.category }})"
+          description: >
+            Jensen–Shannon divergence for category '{{ $labels.category }}' is
+            {{ $value }} vs the baseline embedding distribution.
+            Product lines may have changed significantly.
+            Consider re-embedding affected products.
+          slack_channel: "#alerts-semantic-search"
+
+      # JS divergence > 0.20 (significant drift — reindex recommended)
+      - alert: EmbeddingDriftCritical
+        expr: embedding_drift_score > 0.20
+        for: 0m
+        labels:
+          severity: critical
+          team: data-engineering
+        annotations:
+          summary: "Significant embedding drift ({{ $labels.category }}) — reindex recommended"
+          description: >
+            Jensen–Shannon divergence for '{{ $labels.category }}' is {{ $value }}.
+            Search quality for this category will degrade until embeddings are
+            regenerated.  Trigger the embed + load Airflow tasks for this category.
+          slack_channel: "#alerts-semantic-search"
+          runbook: "https://wiki.internal/runbooks/embedding-reindex"
+
+  - name: api_availability
+    interval: 15s
+    rules:
+      # HTTP 5xx error rate > 1%
+      - alert: APIHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status_code=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total[5m]))
+          > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          team: data-engineering
+        annotations:
+          summary: "FastAPI 5xx error rate > 1%"
+          description: >
+            {{ $value | humanizePercentage }} of HTTP requests are returning
+            5xx errors.  Check application logs and DB connectivity.
+          slack_channel: "#alerts-semantic-search"
+
+      # No requests for 5 min during expected business hours (dead service)
+      - alert: APINoTraffic
+        expr: sum(rate(http_requests_total[5m])) == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: data-engineering
+        annotations:
+          summary: "FastAPI receiving zero traffic — possible service outage"
+          description: >
+            No HTTP requests recorded in the last 5 minutes.
+            Check if the FastAPI container is running and reachable.
+          slack_channel: "#alerts-semantic-search"

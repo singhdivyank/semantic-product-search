@@ -5,7 +5,7 @@ import html
 import json
 import logging
 import re
-***REMOVED***
+from pathlib import Path
 from typing import Generator, Optional
 
 import numpy as np
@@ -75,7 +75,7 @@ def transform_meta_row(raw: dict) -> dict:
     Returns None if the row has no parent_asin (unusable).
     """
 
-***REMOVED***
+    return {
         "parent_asin": raw.get("parent_asin"),
         "title": clean_text(raw.get("title")),
         "subtitle": clean_text(raw.get("subtitle")),
@@ -92,7 +92,7 @@ def transform_meta_row(raw: dict) -> dict:
         "images": raw.get("images"),
         "videos": raw.get("videos"),
         "bought_together": raw.get("bought_together"),
-***REMOVED***
+    }
 
 
 def _open_jsonl(path: Path) -> Generator[dict, None, None]:

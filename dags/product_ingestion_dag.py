@@ -34,7 +34,7 @@ with DAG(
         "retries": 2,
         "retry_delay": timedelta(minutes=5),
         "email_on_failure": False,
-***REMOVED***,
+    },
     start_date=datetime(2024, 1, 1),
     schedule="@weekly",
     catchup=False,

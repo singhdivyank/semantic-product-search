@@ -41,7 +41,7 @@ def _buf_res(row: dict) -> dict:
 
     ts_raw = row.get("timestamp")
 
-***REMOVED***
+    return {
         "parent_asin": row["parent_asin"],
         "asin": row.get("asin"),
         "user_id": row.get("user_id"),
@@ -54,13 +54,13 @@ def _buf_res(row: dict) -> dict:
         "reviewed_at": _parse_ts(ts_raw),
         "sentiment_label": row.get("sentiment_label"),
         "sentiment_score": row.get("sentiment_score"),
-***REMOVED***
+    }
 
 
 def _get_buf_res(row: dict):
     price_raw = row.get("price")
 
-***REMOVED***
+    return {
         "parent_asin": row.get("parent_asin"),
         "title": row.get("title"),
         "subtitle": row.get("subtitle"),
@@ -82,8 +82,8 @@ def _get_buf_res(row: dict):
                 "videos",
                 "bought_together",
             )
-    ***REMOVED***,
-***REMOVED***
+        },
+    }
 
 
 def task_load(**context) -> None:

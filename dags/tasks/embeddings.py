@@ -27,7 +27,7 @@ def task_embed(**context) -> None:
                     "chunk_size": embedding_config["chunk_size"],
                     "normalize": embedding_config["normalize"],
                     "embedding_dim": embedding_config["dim"],
-            ***REMOVED***
+                }
             )
 
             embedding_metrics = _write_embeddings(

@@ -11,7 +11,7 @@ Responsibilities
 
 import json
 import logging
-***REMOVED***
+from pathlib import Path
 from typing import Iterator, Generator, Optional
 
 from transformers import pipeline
@@ -142,7 +142,7 @@ class ReviewTransformer:
         if not parent_asin or not user_id or rating is None:
             return None
 
-    ***REMOVED***
+        return {
             "parent_asin": parent_asin,
             "asin": raw.get("asin"),
             "user_id": user_id,
@@ -152,7 +152,7 @@ class ReviewTransformer:
             "helpful_vote": int(raw.get("helpful_vote") or 0),
             "verified_purchase": bool(raw.get("verified_purchase", False)),
             "timestamp": raw.get("timestamp"),
-    ***REMOVED***
+        }
 
 
 def _clean_meta_file(clean_meta_path: Path, meta_path: Path):

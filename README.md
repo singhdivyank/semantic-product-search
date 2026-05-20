@@ -44,17 +44,31 @@ semantic-product-search/
 │ │ └── transformation.py
 │ └── product_ingestion_dag.py # Main orchestration file
 │
+├── monitoring/           # Added: Observability as Code
+│ ├── grafana/
+│ │ └── dashboards/
+│ │  ├── system_perf.json # Dashboard config for FastAPI & DB latencies
+│ │  └── llm_metrics.json # Dashboard config for token usage and costs
+│ └── alerting_rules.yml  # Added: Slack/Email alert rules for high latency
+│
 ├── src/                # Backend FastAPI Core Engine
 │ ├── api/              # Route endpoints
 │ │ ├── v1/
-│ │ │ ├── search.py     # Main dynamic search (Two-stage: Binary Scan -> Scalar Re-rank)
-│ │ │ └── products.py   # CRUD and metrics routes
+│ │ │ ├── helpers.py
+│ │ │ ├── products.py   # CRUD and metrics routes
+│ │ │ └── pydantic_classes.py
+│ │ │ └── search.py     # Main dynamic search (Two-stage: Binary Scan -> Scalar Re-rank)
 │ │ └── deps.py         # API Dependencies (Database sessions, HF clients)
-│ ├── core/             # App initialization, security, and env management
-│ │ └── config.py
 │ ├── services/         # Business logic layers
+│ │ ├── clients/
+│ │ │ ├── embedding_client.py
+│ │ │ └── generator_client.py
+│ │ ├── tracking/
+│ │ │ ├── per_request.py
+│ │ │ └── rolling.py
 │ │ ├── hf_client.py    # Interfacing with Hugging Face models
-│ │ └── ml_tracking.py  # Tracks Quantization parameters, latency metrics, and prompt variants
+│ │ ├── ml_tracking.py  # Tracks Quantization parameters, latency metrics, and prompt variants
+│ │ └── telemetry.py  # Tracks Quantization parameters, latency metrics, and prompt 
 │ └── main.py           # FastAPI ASGI Application entry point
 │
 ├── tests/              # Unit and Integration test vectors

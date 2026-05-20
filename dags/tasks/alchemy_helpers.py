@@ -32,13 +32,13 @@ def _get_engine():
 
 
 def _embed_buf_res(row: dict) -> dict:
-***REMOVED***
+    return {
         "parent_asin": row["parent_asin"],
         "embedding": row.get("embedding_str"),
         "embedding_half": row.get("embedding_half_str"),
         "model_name": row.get("model_name"),
         "mlflow_run_id": row.get("mlflow_run_id"),
-***REMOVED***
+    }
 
 
 select_asins = text(SELECT_PARENT_ASINS)

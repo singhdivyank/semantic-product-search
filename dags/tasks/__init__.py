@@ -6,11 +6,6 @@ from alchemy_helpers import (
     upsert_embed_sql,
     select_asins,
 )
-from consts import (
-    INSERT_REVIEWS_TEMPLATE,
-    UPSERT_PRODUCT_TEMPLATE,
-    UPSERT_EMBED_TEMPLATE,
-)
 from embeddings import task_embed
 from extraction import task_extract
 from load import task_load
@@ -27,7 +22,4 @@ __all__ = [
     "task_extract",
     "task_load",
     "task_transform",
-    "INSERT_REVIEWS_TEMPLATE",
-    "UPSERT_PRODUCT_TEMPLATE",
-    "UPSERT_EMBED_TEMPLATE",
 ]

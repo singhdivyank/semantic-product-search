@@ -14,8 +14,8 @@ Responsibilities
 import json
 import logging
 import time
-***REMOVED***
-from typing import Generator, Iterator, List, Optional
+from pathlib import Path
+from typing import Generator, List, Iterator, Optional
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -117,7 +117,7 @@ class ProductEmbedder:
                     "embedding_half_str": to_pgvector_string(fp16_vec),
                     "model_name": self.model_name,
                     "mlflow_run_id": mlflow_run_id,
-            ***REMOVED***
+                }
 
             buffer_asins.clear()
             buffer_texts.clear()
@@ -147,12 +147,12 @@ class ProductEmbedder:
     def get_metrics(self, total_items: int, elapsed_s: float) -> dict:
         """Return a dict of MLflow-compatible metrics"""
 
-    ***REMOVED***
+        return {
             "total_embed": total_items,
             "total_embeddings_time_ms": round(elapsed_s * 1000, 2),
             "avg_embedding_time_ms": round(elapsed_s / max(total_items, 1) * 1000, 4),
             "embedding_dim": self.model.get_embedding_dimension(),
-    ***REMOVED***
+        }
 
     def encode_batch(self, texts: List[str]) -> np.ndarray:
         """Encode a list of texts and return an (N, dim) float32 ndarray"""

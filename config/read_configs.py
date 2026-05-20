@@ -14,12 +14,35 @@ def get_embedding_conf() -> Dict[str, Any]:
     return data["embedding"]
 
 
+def get_generation_conf() -> Dict[str, Any]:
+
+    import os
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
+    with open("config/config.yaml", "r") as f:
+        raw_yaml = f.read()
+
+    parsed_yaml = os.path.expandvars(raw_yaml)
+    data = yaml.safe_load(parsed_yaml)
+    return data["generation"]
+
+
 def get_sentiment_model_conf() -> Dict[str, Any]:
 
     with open("config/config.yaml", "r") as f:
         data = yaml.safe_load(f)
 
     return data["sentiment"]
+
+
+def read_vector_search() -> Dict[str, Any]:
+
+    with open("config/config.yaml", "r") as f:
+        data = yaml.safe_load(f)
+
+    return data["vector_search"]
 
 
 def get_dag_conf() -> Dict[str, Any]:
@@ -91,4 +114,35 @@ def get_db_url() -> str:
     parsed_yaml = os.path.expandvars(raw_yaml)
     data = yaml.safe_load(parsed_yaml)
     db_configs = data["database"]
-    return f"postgresql://{db_configs['DB_USER']}:{db_configs['DB_PASSWORD']}@{db_configs['DB_HOST']}:{db_configs['DB_PORT']}/{db_configs['DB_NAME']}"
+    return f"postgresql+psycopg2://{db_configs['DB_USER']}:{db_configs['DB_PASSWORD']}@{db_configs['DB_HOST']}:{db_configs['DB_PORT']}/{db_configs['DB_NAME']}"
+
+
+def get_async_db_url() -> str:
+
+    import os
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
+    with open("config/config.yaml", "r") as f:
+        raw_yaml = f.read()
+
+    parsed_yaml = os.path.expandvars(raw_yaml)
+    data = yaml.safe_load(parsed_yaml)
+    db_configs = data["database"]
+    return f"postgresql+asyncpg://{db_configs['DB_USER']}:{db_configs['DB_PASSWORD']}@{db_configs['DB_HOST']}:{db_configs['DB_PORT']}/{db_configs['DB_NAME']}"
+
+
+def get_api_configs() -> Dict[str, Any]:
+
+    import os
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
+    with open("config/config.yaml", "r") as f:
+        raw_yaml = f.read()
+
+    parsed_yaml = os.path.expandvars(raw_yaml)
+    data = yaml.safe_load(parsed_yaml)
+    return data["api"]

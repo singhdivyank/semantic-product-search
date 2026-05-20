@@ -1,7 +1,8 @@
 .DS_Store
-
+.png
 load_data.py
 *.pdf
+Schema.sql
 
 # Python artifacts
 __pycache__/
@@ -19,10 +20,24 @@ build/
 venv/
 env/
 
+# Local data (JSONL files can be gigabytes — never bake into image)
+data/
+*.jsonl
+*.jsonl.gz
+*.parquet
+
 # Secrets
 .env
 *.pem
 *.key
+
+# Git
+.git/
+.gitignore
+
+# Docker files themselves (already in context)
+docker-compose*.yml
+.dockerignore
 
 # IDE
 .vscode/

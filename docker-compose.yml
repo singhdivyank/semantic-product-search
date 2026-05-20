@@ -1,0 +1,282 @@
+# Services
+# --------
+#   postgres      PostgreSQL 16 + pgvector extension
+#   api           FastAPI application (src/main.py)
+#   airflow-init  One-shot: DB init + admin user creation
+#   airflow-web   Airflow webserver  (port 8080)
+#   airflow-sched Airflow scheduler
+#   airflow-worker Airflow Celery worker
+#   redis         Celery broker for Airflow
+#   mlflow        MLflow tracking server (port 5000)
+#   prometheus    Prometheus scraper  (port 9090)
+#   grafana       Grafana dashboards  (port 3000)
+
+
+version: "3.9"
+
+x-airflow-common: &airflow-common
+  build:
+    context:
+    dockerfile: Dockerfile
+  image: semantic-search:latest
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR:                  CeleryExecutor
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN:          postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@postgres:5432/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND:          db+postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/airflow
+    AIRFLOW__CELERY__BROKER_URL:              redis://redis:6379/0
+    AIRFLOW__CORE__FERNET_KEY:                ${AIRFLOW_FERNET_KEY}
+    AIRFLOW__WEBSERVER__SECRET_KEY:           ${AIRFLOW_SECRET_KEY}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__CORE__LOAD_EXAMPLES:             "false"
+    AIRFLOW__API__AUTH_BACKENDS:              airflow.api.auth.backend.basic_auth
+    AIRFLOW_HOME:                             /opt/airflow
+    DB_HOST:        postgres
+    DB_PORT:        5432
+    DB_NAME:        ${DB_NAME}
+    DB_USER:        ${DB_USER}
+    DB_PASSWORD:    ${DB_PASSWORD}
+    HF_API_TOKEN:   ${HF_API_TOKEN}
+    MLFLOW_TRACKING_URI: http://mlflow:5000
+    DATA_DIR:       /opt/airflow/data
+
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./config:/opt/airflow/config
+    - ./db:/opt/airflow/db
+    - airflow_logs: /opt/airflow/logs
+    - airflow_plugins: /opt/airflow/plugins
+    - data_volume: /opt/airflow/data
+    - hf_cache: /app/.cache/huggingface
+  
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: semantic_postgres
+    environment:
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB:       ${DB_NAME}
+      POSTGRES_MULTIPLE_DATABASES: ${DB_NAME},airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+  
+  api:
+    build:
+      context:
+      dockerfile: Dockerfile
+    image: semantic-search:latest
+    container_name: semantic_api
+    environment:
+      DB_HOST:             postgres
+      DB_PORT:             5432
+      DB_NAME:             ${DB_NAME}
+      DB_USER:             ${DB_USER}
+      DB_PASSWORD:         ${DB_PASSWORD}
+      HF_API_TOKEN:        ${HF_API_TOKEN}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      API_RELOAD:          "false"
+    volumes:
+      - ./src:/app/src
+      - ./config:/app/config
+      - ./db:/app/db
+      - hf_cache:/app/.cache/huggingface
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service-healthy
+      mlflow:
+        condition: service_started
+    command: >
+      sh -c "
+        echo 'Running Alembic migrations...' &&
+        alembic -c db/alembic.ini upgrade head &&
+        echo 'Starting FastAPI...' &&
+        uvicorn src.main:app
+          --host 0.0.0.0
+          --port 8000
+          --workers 2
+          --log-config config/logging.conf
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+  redis:
+    image: redis:7-alpine
+    container_name: semantic_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+  
+  airflow-init:
+    <<: *airflow-common
+    container_name: semantic_airflow_init
+    entrypoint: /bin/bash
+    command: 
+      - -c
+      - |
+        echo "Initialising Airflow DB..."
+        airflow db migrate
+        echo "Creating admin user..."
+        airflow users create \
+          --username admin \
+          --password ${AIRFLOW_ADMIN_PASSWORD:-admin} \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email admin@example.com || true
+        echo "Airflow init complete."
+    restart: "no"
+  
+  airflow-web:
+    <<: *airflow-common
+    container_name: semantic_airflow_web
+    command: airflow webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  
+  airflow-sched:
+    <<: *airflow-common
+    container_name: semantic_airflow_scheduler
+    command: airflow scheduler
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname \"$${HOSTNAME}\""]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+  
+  airflow-worker:
+    <<: *airflow-common
+    container_name: semantic_airflow_worker
+    command: airflow celery worker
+    environment:
+      <<: *airflow-env
+      DUMB_INIT_SETSID: "0"
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./amazon-data:/amazon-data:ro
+      - airflow_logs:/opt/airflow/logs
+      - ./dags:/opt/airflow/dags
+  
+  mlflow:
+    image: python:3.11-slim
+    container_name: semantic_mlflow
+    command: >
+      sh -c "
+        pip install --quiet mlflow>=2.13.0 psycopg2-binary &&
+        mlflow server
+          --host 0.0.0.0
+          --port 5000
+          --backend-store-uri postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/mlflow
+          --default-artifact-root /mlflow/artifacts
+          --serve-artifacts
+      "
+    environment:
+      DB_USER:     ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mlflow_artifacts:/mlflow/artifacts
+    ports:
+      - "5000:5000"
+  
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: semantic_prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerting_rules.yml:/etc/prometheus/alerting_rules.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+  
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: semantic_grafana
+    environment:
+      GF_SECURITY_ADMIN_USER:     ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP:     "false"
+      GF_DATASOURCES_DEFAULT_NAME: Prometheus
+      GF_SERVER_ROOT_URL:         http://localhost:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  airflow_logs:
+    driver: local
+  airflow_plugins:
+    driver: local
+  data_volume:
+    driver: local
+  hf_cache:
+    driver: local
+  mlflow_artifacts:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

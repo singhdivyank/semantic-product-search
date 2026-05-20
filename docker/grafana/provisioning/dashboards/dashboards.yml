@@ -1,0 +1,15 @@
+# Grafana dashboard provisioning — loads both JSON dashboards from
+# monitoring/grafana/dashboards/ automatically on container startup.
+
+apiVersion: 1
+
+providers:
+  - name: "Semantic Search Dashboards"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

@@ -1,0 +1,33 @@
+global:
+  # how often to pull metrics from targets
+  scrape_interval: 15s
+  # how often to evaluate alerting rules
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+# Load alerting rules generated in monitoring/alerting_rules.yml
+rule_files:
+  - /etc/prometheus/alerting_rules.yml
+
+# Alertmanager (configure separately for Slack/email delivery)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  - job_name: "semantic_search_api"
+    static_configs:
+      - targets: ["api:8000"]
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  # Add postgres_exporter sidecar to expose pg_stat_* metrics if needed.
+  # Uncomment and add the service to docker-compose when ready.
+  # - job_name: "postgres"
+  #   static_configs:
+  #     - targets: ["postgres-exporter:9187"]
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

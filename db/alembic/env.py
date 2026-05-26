@@ -32,11 +32,11 @@ config = context.config
 
 _db_url = (
     f"postgresql+psycopg2://"
-    f"{os.environ.get('DB_USER', 'postgres')}:"
-    f"{os.environ.get('DB_PASSWORD', 'postgres')}@"
-    f"{os.environ.get('DB_HOST', 'localhost')}:"
-    f"{os.environ.get('DB_PORT', '5432')}/"
-    f"{os.environ.get('DB_NAME', 'amazon_reviews')}"
+    f"{os.environ.get('DB_USER')}:"
+    f"{os.environ.get('DB_PSWD')}@"
+    f"{os.environ.get('DB_HOST')}:"
+    f"{os.environ.get('DB_PORT')}/"
+    f"{os.environ.get('DB_NAME')}"
 )
 config.set_main_option("sqlalchemy.url", _db_url)
 

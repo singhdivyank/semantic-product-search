@@ -1,7 +1,7 @@
 import logging
 
 from config.read_configs import read_ingestion_configs
-from src.transformer import _clean_meta_file, _clean_reviews_file
+from dags.src.transformer import _clean_meta_file, _clean_reviews_file
 
 log = logging.getLogger("pipeline.dag")
 

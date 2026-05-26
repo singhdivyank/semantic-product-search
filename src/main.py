@@ -27,7 +27,7 @@ from config.read_configs import (
     get_db_url,
     get_embedding_conf,
 )
-from consts import HTTP_REQUEST_DURATION, HTTP_REQUESTS_TOTAL
+from src.consts import HTTP_REQUEST_DURATION, HTTP_REQUESTS_TOTAL
 from src.api.v1 import products as products_router
 from src.api.v1 import search as search_router
 from src.services.hf_client import get_embedding_client
@@ -96,9 +96,9 @@ def create_app() -> FastAPI:
             "all-MiniLM-L6-v2 embeddings, and Mistral-7B review summarisation. "
             "Implements a two-stage binary scan → cosine re-rank retrieval pipeline."
         ),
-        docs_url=f"{api_configs["prefix"]}/docs",
-        redoc_url=f"{api_configs["prefix"]}/redoc",
-        openapi_url=f"{api_configs["prefix"]}/openapi.json",
+        docs_url=f"{api_configs['prefix']}/docs",
+        redoc_url=f"{api_configs['prefix']}/redoc",
+        openapi_url=f"{api_configs['prefix']}/openapi.json",
         lifespan=lifespan,
     )
 
@@ -162,7 +162,7 @@ def create_app() -> FastAPI:
     application.include_router(products_router.router, prefix=api_configs["prefix"])
 
     # Health check
-    @application.get(f"{api_configs["prefix"]}/health", tags=["health"])
+    @application.get(f"{api_configs['prefix']}/health", tags=["health"])
     async def health() -> dict:
         return {
             "status": "ok",

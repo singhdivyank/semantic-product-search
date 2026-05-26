@@ -5,8 +5,8 @@ from typing import Generator, Optional
 
 import mlflow
 
-from services.tracking.rolling import RollingStats
-from services.tracking.per_request import SearchRunContext
+from src.services.tracking.rolling import RollingStats
+from src.services.tracking.per_request import SearchRunContext
 from config.read_configs import (
     get_dag_conf,
     get_embedding_conf,

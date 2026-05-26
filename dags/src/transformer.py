@@ -17,7 +17,7 @@ from typing import Iterator, Generator, Optional
 from transformers import pipeline
 
 from config.read_configs import get_sentiment_model_conf
-from helpers import _open_jsonl, clean_text, transform_meta_row
+from dags.src.helpers import _open_jsonl, clean_text, transform_meta_row
 
 log = logging.getLogger("pipeline.transformer")
 

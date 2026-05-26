@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 import numpy as np
 
-from consts import PRODUCTS, REVIEW_TEMPLATES
+from db.consts import PRODUCTS, REVIEW_TEMPLATES
 
 
 def get_embedding_rows() -> list[dict]:

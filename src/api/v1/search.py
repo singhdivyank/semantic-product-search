@@ -45,7 +45,7 @@ from config.read_configs import (
     get_embedding_conf,
     get_generation_conf,
 )
-from consts import (
+from src.api.v1.consts import (
     REVIEWS_SQL_QUERY,
     SQL_KEYWORD_SEARCH,
     DB_QUERY_LATENCY,
@@ -54,8 +54,8 @@ from consts import (
     HNSW_STAGE2_LATENCY,
     SEARCH_RESULTS_RETURNED,
 )
-from helpers import _build_two_stage_query, _validate_fields
 from src.api.deps import get_db, get_embedder, get_generator, get_tracker
+from src.api.v1.helpers import _build_two_stage_query, _validate_fields
 from src.api.v1.pydantic_classes import SearchResult, SearchRequest
 from src.services.hf_client import EmbeddingClient, GenerationClient
 from src.services.ml_tracking import MLTracker

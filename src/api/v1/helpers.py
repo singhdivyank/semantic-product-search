@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import HTTPException, status
 
 from config.read_configs import read_vector_search
-from consts import _ALLOWED_COLUMNS, _DEFAULT_COLUMNS, SQL_SEARCH_QUERY
+from src.api.v1.consts import _ALLOWED_COLUMNS, _DEFAULT_COLUMNS, SQL_SEARCH_QUERY
 
 vector_configs = read_vector_search()
 

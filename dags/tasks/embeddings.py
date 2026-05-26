@@ -2,8 +2,12 @@ import logging
 
 import mlflow
 
-from config.read_configs import get_dag_conf, read_ingestion_configs, get_embedding_conf
-from src.embedder import _write_embeddings
+from config.read_configs import (
+    get_dag_conf,
+    read_ingestion_configs,
+    get_embedding_conf,
+)
+from dags.src.embedder import _write_embeddings
 
 log = logging.getLogger("pipeline.dag")
 

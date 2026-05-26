@@ -1,9 +1,9 @@
 # dependency builder
-FROM python:3.11-slim AS builder
+FROM python:3.11.13-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libq-dev \
+    libpq-dev \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
@@ -21,21 +21,23 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # lean image
-FROM python:3.11-slim AS runtime
+FROM python:3.11.13-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-ENV VIRTUAL_ENV=/opt/venv
+ENV VIRTUAL_ENV=/opt/env
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /opt/env /opt/env
 
-RUN groupadd --grid 1001 appgroup && \
+RUN groupadd --gid 1001 appgroup && \
     useradd --uid 1001 --gid appgroup --shell /bin/bash --create-home appuser
 
 WORKDIR /app
+
+ENV PYTHONPATH=/app
 
 COPY --chown=appuser:appgroup src/ ./src/
 COPY --chown=appuser:appgroup config/ ./config/
@@ -43,6 +45,9 @@ COPY --chown=appuser:appgroup db/ ./db/
 
 ENV HF_HOME=/app/.cache/huggingface
 RUN mkdir -p /app/.cache/huggingface && chown -R appuser:appgroup /app/.cache
+
+RUN mkdir -p /tmp/airflow && \
+    chown -R appuser:appgroup /tmp/airflow
 
 USER appuser
 

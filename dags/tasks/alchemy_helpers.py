@@ -4,7 +4,7 @@ Utility functions involving SQLAlchemy for DAGs
 
 from sqlalchemy import create_engine, text
 
-from consts import (
+from dags.tasks.consts import (
     INSERT_REVIEWS_TEMPLATE,
     SELECT_PARENT_ASINS,
     UPSERT_PRODUCT_TEMPLATE,

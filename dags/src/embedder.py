@@ -21,7 +21,12 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 from config.read_configs import get_embedding_conf
-from helpers import _open_jsonl, build_product_text, fp32_to_fp16, to_pgvector_string
+from dags.src.helpers import (
+    _open_jsonl,
+    build_product_text,
+    fp32_to_fp16,
+    to_pgvector_string,
+)
 
 log = logging.getLogger("pipeline.embedder")
 

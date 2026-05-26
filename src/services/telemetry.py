@@ -1,37 +1,17 @@
 """
-Prometheus metric definitions for the Semantic Product Search API.
-
-All metrics are defined here in one place so that:
-  - src/main.py mounts the /metrics scrape endpoint
-  - src/api/v1/search.py instruments the hybrid search pipeline
-  - src/services/hf_client.py instruments token counts and TTFT
-
-Metric categories (from project spec)
---------------------------------------
-A. Core Database & Vector Index Metrics
-   - HNSW Stage-1 read latency    (Histogram)
-   - Stage-2 cosine rerank latency (Histogram)
-   - DB query latency              (Histogram)
-   - HNSW recall rate              (Gauge — set by periodic eval job)
-   - Shared buffer hit ratio       (Gauge — set by periodic PG stats job)
-
-B. LLM Application & Inference Metrics (LLMOps)
-   - Time to First Token / TTFT    (Histogram)
-   - Total generation latency      (Histogram)
-   - Input + output token counts   (Counter, labelled by model + type)
-   - Relevance & faithfulness      (Histogram)
-
-C. Search Pipeline Metrics (per spec snippet)
-   - Full hybrid search latency    (Histogram, labelled by has_vector + category_filter)
-   - Embedding latency             (Histogram)
-   - Requests total / errors       (Counter)
+src/services/telemetry.py
+=========================
+Helper functions for recording Prometheus metrics.
+All metric OBJECTS are defined in src/api/v1/consts.py — this file
+only contains context managers and convenience recording functions.
+No metrics are instantiated here to avoid duplicate registration errors.
 """
 
 import time
 from contextlib import contextmanager
 from typing import Generator
 
-from consts import (
+from src.api.v1.consts import (
     HNSW_RECALL_RATE,
     PG_BUFFER_HIT_RATIO,
     LLM_GENERATION_LATENCY,
@@ -52,9 +32,7 @@ def observe_search(
     category_filter: bool,
     search_type: str = "semantic",
 ) -> Generator[None, None, None]:
-    """
-    Context manager that times the full search block and records it.
-    """
+    """Times the full search block and records SEARCH_LATENCY."""
     SEARCH_REQUESTS_TOTAL.labels(search_type=search_type).inc()
     start = time.perf_counter()
     try:
@@ -74,10 +52,7 @@ def observe_search(
 
 @contextmanager
 def observe_llm_generation(model_name: str) -> Generator[None, None, None]:
-    """
-    Context manager that times LLM generation and records total latency.
-    TTFT must be recorded separately by the generation client.
-    """
+    """Times LLM generation and records LLM_GENERATION_LATENCY."""
     start = time.perf_counter()
     try:
         yield
@@ -90,12 +65,7 @@ def observe_llm_generation(model_name: str) -> Generator[None, None, None]:
         )
 
 
-def record_token_counts(
-    model_name: str,
-    input_tokens: int,
-    output_tokens: int,
-) -> None:
-    """Increment token counters after a generation call."""
+def record_token_counts(model_name: str, input_tokens: int, output_tokens: int) -> None:
     LLM_TOKEN_COUNT.labels(model_name=model_name, token_type="input").inc(input_tokens)
     LLM_TOKEN_COUNT.labels(model_name=model_name, token_type="output").inc(
         output_tokens
@@ -111,15 +81,12 @@ def record_relevance(model_name: str, score: float) -> None:
 
 
 def record_hnsw_recall(k: int, recall: float) -> None:
-    """Called by the periodic Airflow recall-evaluation task."""
     HNSW_RECALL_RATE.labels(k=str(k)).set(recall)
 
 
 def record_pg_buffer_hit(ratio: float) -> None:
-    """Called by the periodic Airflow PG-stats task."""
     PG_BUFFER_HIT_RATIO.set(ratio)
 
 
 def record_embedding_drift(category: str, js_divergence: float) -> None:
-    """Called by the Airflow vector drift monitoring task."""
     EMBEDDING_DRIFT_SCORE.labels(category=category).set(js_divergence)

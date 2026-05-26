@@ -21,7 +21,8 @@ semantic-product-search/
 │
 ├── db/                        # SQL Schema and Migration Control
 │ ├── alembic/                 # Alembic migration environment
-│ │   └── versions/            # Database migration tracks
+│ | ├── env.py
+│ │ └── versions/            # Database migration tracks
 │ ├── tables/                  # SQLAlchemy classes with pgvector/halfvec types
 │ | ├── base.py
 │ | ├── product_embeddings.py
@@ -65,8 +66,11 @@ semantic-product-search/
 │ │ │ │ └── prometheus.yml
 │ ├── postgres/
 │ │ └── init.sql
-│ └── prometheus/
-│   └── prometheus.yml
+│ ├── prometheus/
+│ │  └── prometheus.yml
+│ └── scripts/
+│ │ ├── airflow_init.sh
+│ │ └── start_api.sh
 │
 ├── monitoring/                # Added: Observability as Code
 │ ├── grafana/
@@ -78,6 +82,7 @@ semantic-product-search/
 ├── src/                       # Backend FastAPI Core Engine
 │ ├── api/                     # Route endpoints
 │ │ ├── v1/
+│ │ │ ├── consts.py
 │ │ │ ├── helpers.py
 │ │ │ ├── products.py          # CRUD and metrics routes
 │ │ │ └── pydantic_classes.py
@@ -93,6 +98,7 @@ semantic-product-search/
 │ │ ├── hf_client.py            # Interfacing with Hugging Face models
 │ │ ├── ml_tracking.py          # Tracks Quantization parameters, latency metrics, prompt variants
 │ │ └── telemetry.py            # Tracks Quantization parameters,latency metrics, prompt
+│ ├── consts.py
 │ └── main.py                   # FastAPI ASGI Application entry point
 │
 ├── tests/                      # Unit and Integration test vectors
@@ -122,3 +128,8 @@ author={Hou, Yupeng and Li, Jiacheng and He, Zhankui and Yan, An and Chen, Xiusi
 journal={arXiv preprint arXiv:2403.03952},
 year={2024}
 }
+
+```bash
+chmod +x docker/scripts/start_api.sh
+chmod +x docker/scripts/airflow_init.sh
+```

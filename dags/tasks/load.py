@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from config.read_configs import get_embedding_conf, read_ingestion_configs
-from src.helpers import _open_jsonl
-from alchemy_helpers import (
+from dags.src.helpers import _open_jsonl
+from dags.tasks.alchemy_helpers import (
     _get_engine,
     _embed_buf_res,
     insert_review_sql,

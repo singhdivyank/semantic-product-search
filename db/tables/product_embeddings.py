@@ -19,7 +19,7 @@ from sqlalchemy import Column, ForeignKey, Text, func
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.orm import relationship
 
-from base import Base
+from db.tables.base import Base
 
 _VECTOR_TYPE = Vector(384)
 _HALFVECTOR_TYPE = HALFVEC(384)

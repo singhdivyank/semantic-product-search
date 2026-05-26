@@ -2,8 +2,8 @@
 
 from functools import lru_cache
 
-from services.clients.embedding_client import EmbeddingClient
-from services.clients.generator_client import GenerationClient
+from src.services.clients.embedding_client import EmbeddingClient
+from src.services.clients.generator_client import GenerationClient
 
 
 @lru_cache(maxsize=1)

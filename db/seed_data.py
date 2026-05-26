@@ -28,13 +28,13 @@ import logging
 from sqlalchemy import create_engine, text
 
 from config.read_configs import get_db_url
-from consts import (
+from db.consts import (
     PRODUCTS,
     SEED_EMBEDDINGS_STR,
     SEED_PRODUCTS_STR,
     SEED_REVIEWS_STR,
 )
-from seed_helpers import (
+from db.seed_helpers import (
     get_embedding_rows,
     get_product_rows,
     get_reviews_rows,

@@ -24,7 +24,7 @@ import torch
 from transformers import pipeline as hf_pipeline, BitsAndBytesConfig
 
 from config.read_configs import get_generation_conf
-from consts import _SUMMARISE_PROMPT_TEMPLATE
+from src.consts import _SUMMARISE_PROMPT_TEMPLATE
 
 log = logging.getLogger("app.hf_client")
 

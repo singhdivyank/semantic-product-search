@@ -17,10 +17,10 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from tasks.embeddings import task_embed
-from tasks.extraction import task_extract
-from tasks.load import task_load
-from tasks.transformation import task_transform
+from dags.tasks.embeddings import task_embed
+from dags.tasks.extraction import task_extract
+from dags.tasks.load import task_load
+from dags.tasks.transformation import task_transform
 
 with DAG(
     dag_id="product_ingestion",

@@ -20,7 +20,6 @@ from sqlalchemy import (
     CheckConstraint,
     Column,
     ForeignKey,
-    Index,
     Integer,
     Numeric,
     Text,
@@ -29,7 +28,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.orm import relationship
 
-from base import Base
+from db.tables.base import Base
 
 
 class Reviews(Base):
@@ -66,11 +65,6 @@ class Reviews(Base):
 
     __table_args__ = (
         CheckConstraint("rating BETWEEN 1 AND 5", name="ck_reviews_rating"),
-        Index(
-            "idx_reviews_fts",
-            func.to_tsvector("english", func.coalesce(Column("review_text"), "")),
-            postgresql_using="gin",
-        ),
     )
 
     def __repr__(self) -> str:

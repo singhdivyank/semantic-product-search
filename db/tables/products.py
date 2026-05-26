@@ -14,11 +14,11 @@ pgvector types
   migration handles the real column type).
 """
 
-from base import Base
-
-from sqlalchemy import Column, Text, Numeric, Index, Integer, func
+from sqlalchemy import Column, Text, Numeric, Integer, func
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.orm import relationship
+
+from db.tables.base import Base
 
 
 class Product(Base):
@@ -59,10 +59,7 @@ class Product(Base):
         cascade="all, delete-orphan",
     )
 
-    __table_args__ = (
-        Index("idx_products_features_gin", "features", postgresql_using="gin"),
-        Index("idx_products_categories_gin", "categories", postgresql_using="gin"),
-    )
+    __table_args__ = ()
 
     def __repr__(self) -> str:
         return f"<Product asin={self.parent_asin!r} title={self.title!r}>"

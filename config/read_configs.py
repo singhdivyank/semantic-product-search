@@ -114,7 +114,7 @@ def get_db_url() -> str:
     parsed_yaml = os.path.expandvars(raw_yaml)
     data = yaml.safe_load(parsed_yaml)
     db_configs = data["database"]
-    return f"postgresql+psycopg2://{db_configs['DB_USER']}:{db_configs['DB_PASSWORD']}@{db_configs['DB_HOST']}:{db_configs['DB_PORT']}/{db_configs['DB_NAME']}"
+    return f"postgresql+psycopg2://{db_configs['user']}:{db_configs['password']}@{db_configs['host']}:{db_configs['port']}/{db_configs['name']}"
 
 
 def get_async_db_url() -> str:
@@ -130,7 +130,7 @@ def get_async_db_url() -> str:
     parsed_yaml = os.path.expandvars(raw_yaml)
     data = yaml.safe_load(parsed_yaml)
     db_configs = data["database"]
-    return f"postgresql+asyncpg://{db_configs['DB_USER']}:{db_configs['DB_PASSWORD']}@{db_configs['DB_HOST']}:{db_configs['DB_PORT']}/{db_configs['DB_NAME']}"
+    return f"postgresql+asyncpg://{db_configs['user']}:{db_configs['password']}@{db_configs['host']}:{db_configs['port']}/{db_configs['name']}"
 
 
 def get_api_configs() -> Dict[str, Any]:
